@@ -1,0 +1,69 @@
+clear all;clc;
+%.........................................................................%
+%options
+opt.gftype=1;                   %type of GF combination(=1:L1&L2;=2:L1&L3)
+opt.elmask=15*pi/180;           %elevation mask(rad).
+opt.navsys='GR';                 %navigation system,'GREC'
+opt.gfslipthres=0.5;            %threshold of cycle slip detection by GF(m)
+opt.mwslipthres=5;              %threshold of cycle slip detection by MW(m)
+opt.hion=350000;                %height of shell(km)
+%file 
+%file 
+obsfile='D:\美国\283\*.*o';
+navfile='D:\美国\283\*.*rnx';
+outpath='D:\美国\283\';
+%.........................................................................%
+%check observation file
+[ofpath,oname,ext]=fileparts(obsfile);
+if ~isempty(ofpath)
+    ofpath=[ofpath,'\'];
+end
+oname=[oname,ext];
+file_obs=dir([ofpath,oname]);
+nof=length(file_obs);
+if nof==0
+    error('No observation file !!!\n');
+end
+%check navigation file
+[nfpath,nname,ext]=fileparts(navfile);
+if ~isempty(nfpath)
+    nfpath=[nfpath,'\'];
+end
+nname=[nname,ext];
+file_nav=dir([nfpath,nname]);
+nnf=length(file_nav);
+if nnf==0
+    error('No navigation file !!!\n');
+end
+%compute ionospheric TEC for each file
+for nsta=1:nof
+    ofile=[ofpath,file_obs(nsta).name];
+    olen=length(file_obs(nsta).name);
+    if olen<13                                                   %version 2
+        cdoy=file_obs(nsta).name(5:7);
+    else
+        cdoy=file_obs(nsta).name(17:19);                         %version 3
+    end
+    for j=1:nnf
+        vs=0;
+        if ismember(cdoy,file_nav(j).name);
+            nfile=[nfpath,file_nav(j).name];
+            vs=1;
+            break;
+        end
+    end
+    if vs==0
+        disp(['No navigation file for !!!',file_obs(nsta).name]);
+        continue;
+    end
+    disp(['->Processing station ',num2str(nsta),'/',num2str(nof)]);
+    %read observation and navigation file
+    obsdata=readobs( ofile,opt.navsys );
+    navdata=readnav( nfile );
+    %generate TEC file
+    [~,fname,ext]=fileparts(ofile);
+    tecfile=[outpath,fname,ext,'.tec'];
+    calTEC(opt,obsdata,navdata,tecfile,nsta);
+end
+
+clear all;
