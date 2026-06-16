@@ -1,1 +1,0 @@
-Run 'main.py' to open the user-friendly graphical user interface of IIAD. For detailed usage methods of the software, please refer to the Users Manual
